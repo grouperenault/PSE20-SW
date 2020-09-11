@@ -1,0 +1,131 @@
+// **********************************************************************************
+// PSE project
+// **********************************************************************************
+// The source code is protected by intellectual and/or industrial property rights.
+// Copyright Renault S.A.S. 2020
+//
+// Written by A006239 for Renault S.A.S. usage ONLY
+//
+// All text above must be included in any redistribution.
+//
+// **********************************************************************************
+
+
+Paramétrage :
+---------------
+
+=> Informations :
+	> Développement effectué avec l'IDE Arduino v1.8.12
+	> Liste des librairies externes utilisées :
+		- LiquidCrystal_I2C.h
+		- Adafruit_ADS1015.h
+	> Tous les volumes définis dans le code source sont exprimés en dixième de ml (ex 15ml => 150)
+
+=> Paramètres au démarrage
+	> Lors du tout premier démarrage, la configuration est lancé afin de configurer à minima l'écran
+	> Ensuite, il est possible de démarrer le menu de configuration en appuyant sur le bouton "Bolus" 
+	pendant l'affichage du splash screen
+
+	> Liste des paramètres modifiables (et enregistrés dans l'eeprom) :
+		- Adresse I2C de l'écran LCD
+		- Vérification de la présence du composant ADS
+		- Vérification de la présence du capteur de pression FX29
+		- Définition de la vitesse de Bolus (valeur par défaut 1500)
+		- Définition du volume maximum lors d'un Bolus (valeur par défaut 50 soit 5ml)
+		- Définition de la vitesse d'avance (valeur par défaut 50000)
+		- Définition de la vitesse de recul (valeur par défaut 90000)
+		- Définition si le système test la présence de batterie et accepte l'allumage ou non sans batterie
+		- Procédure d'initialisation/apprentissage des positions chariots : connaître le nombre de pas de chaque capteurs)
+
+=> Pour ajouter une seringue, il faut se rendre dans le fichier PSE_struct.h et modifier les lignes suivantes :
+        const  char   seringueList[6][17] = {"BD 50ml", "seringue2", "seringue3", "seringue4", "seringue5", "seringue6"};
+        const  char   seringueShort[6][17] = {"BD 50ml", "short 2", "short 3", "short 4", "short 5", "short 6"};
+        const  int    seringueDiam[6]     = {265        , 262        , 261        , 263        , 264        , 266        };
+        const  byte   seringueNbre        = 6; // nombre de seringues dans la liste
+
+	> Le diametre de la seringue est exprimé en mm
+	> Le premier tableau permet de définir le libellé affiché pendant la sélection de la seringue (max 12 caractères)
+	> Le second tableau permet de définir le libellé affiché sur l'écran principal (max 7 caractères)
+	> Le champ seringueNbre permet de définir le nombre de seringues. (Tests effectués jusqu'à 6 seringues)
+	Attention : la cohérence doit être maintenue entre tous ces champs
+
+=> Le watchdog permet de redémarrer l'arduino en cas de problème pendant le fonction. Il est initialisé à 2 secondes dans le fichier PSE.init
+   La liste des valeurs disponibles est définies en bas de ce fichier.
+	/* 
+   	 * Définition du watchdog
+    */
+  	wdt_enable(WDTO_2S);     // List of value in file "readme.me"
+
+Versions :
+----------
+	> "V0.1.13"- 200614 :  Correction du bug fin de distribution qui plante le PSE (plus d'action possible)
+						   Mise en place d'un deuxième seuil de recul après occlusion
+	> "V0.1.12"- 200525 :  Changement du libellé "alarme 10%" en Alarme "pré-fin"
+						   Mise en place du capteur de pression FX29
+						   Implementation du fin de course avec capteur de surpression (si dans ancienne zone de surpression + supression)
+						   Implémentation de l'accostage de la seringue
+						   Mise en place du suivi de position du chariot (mise à jour de la valeur en fonction des capteurs physiques actionnés)
+						   Implémentation de l'alarme 10 minutes et non plus de l'alarme 10 %
+						   Implementation de l'initialisation des positions chariots (nombre de pas)
+	> "V0.1.11"- 200506 :  Arret perf si bolus + recul moteur pour supression de la surpression
+	> "V0.1.10"- 200424 :  Ajout du test si présence de l'ADS dans le menu de configuration
+	> "V0.1.9" - 200422 :  Reprise de la gestion des alarmes sur la tension.
+						   Correction du bug sur les boutons (prb de traitement de la modif/fréquence lecture)
+	> "V0.1.8" - 200421 :  Correction bug sur détection occlusion + stop du son
+						   Arret des alarmes sur arrêt de la perfusion
+						   Mise en place du check batterie avec coupure alim
+	> "V0.1.7" - 200419 :  Optimisation des variables
+	> "V0.1.6" - 200416 :  configuration de l'écran si non effectué
+						   lancement d'une configuration forcée : volume bolus ml/h, volume bolux max, volume avance rapide ml/h, volume retour rapide ml/h
+						   correction affichage du diametre de la seringue sur le menu principal
+	> "V0.1.5" - 200415 :  correction relance de l'alarme sonore
+						   correction selection de la seringue
+						   gestion de l'alim avec lissage
+						   boucle d'affichage des messages alarmes
+						   relance des alarmes après un certain temps 
+	> "V0.1.4" - 200414 :  pilotage reset moteur 
+	> "V0.1.3" - 200414 :  indicateur lié au fonctionnement du moteur
+	> "V0.1.2" - 200414 :  version avec lissage des boutons
+	> "V0.1.1" - 200414 :  version avec refonte de la gestion du moteur + autres corrections
+	> "V0.0.1" - 200410 :  toute première version testée sur la mécanique
+
+Terminé :
+---------
+	> Relance automatique du son au bout de 5 minutes 
+	> Ordre de priorité des alarmes : occlusion, fin de perf, batterie, 10%, secteur
+	> Ecran de perf en cours avec indicateur d'activité.
+	> Bolus => Limitation du volume à 5 ml max avec affichage d'un message
+	> Bolus => Volume envoyer au patient affiché 
+	> Bolus => Maintien de l'affichage du Bolus lors de l'arrêt de celui-ci
+	> Sauvegarde Debis dans l'eeprom si modification => Sauvegarde lors du lancement de la perfusion
+	> Sauvegarde de la seringue dans l'eeprom si modification => Sauvegarde lors de la validation de la seringue
+	> Mise en place du watchdog. Paramétré à 2s dans un premier temps
+
+	> Règles des alarmes
+		=> Activation : voir dans le fichier des alarmes PSE_alarme.cpp
+				
+Corrections / Remarques :
+-------------------------
+	> Voir la remise à zero du timer millis .... comment le gérer
+		=> Done car gérer en long
+	> Mettre un message d'arret quand arret de l'avance ou retour rapide à cause d'un capteur
+		=> Decision : Pas de message
+
+
+Paramètres du watchdog :
+------------------------
+
+    time before watchdog firing    argument of wdt_enable()
+    -------------------------------------------------------
+    15mS                           WDTO_15MS
+    30mS                           WDTO_30MS
+    60mS                           WDTO_60MS
+    120mS                          WDTO_120MS
+    250mS                          WDTO_250MS
+    500mS                          WDTO_500MS
+    1S                             WDTO_1S            
+    2S                             WDTO_2S
+    4S                             WDTO_4S
+    8S                             WDTO_8S
+
+
