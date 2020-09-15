@@ -1,1 +1,3 @@
-"# PSE20-SW" 
+# PSE20-SW
+
+All the files in this directory (and its subdirectories) are subject to the GPL V3 licence.
